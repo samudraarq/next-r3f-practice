@@ -1,7 +1,9 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import Experience from "./experience";
+import dynamic from "next/dynamic";
+
+const Experience = dynamic(() => import("./experience"), { ssr: false });
 
 const Page = () => {
   return (
