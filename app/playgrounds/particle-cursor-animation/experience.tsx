@@ -1,11 +1,11 @@
+import { useRef } from "react";
+import { extend, useFrame } from "@react-three/fiber";
 import { OrbitControls, shaderMaterial } from "@react-three/drei";
+import * as THREE from "three";
 import fragmentShader from "./shaders/fragment.glsl";
 import vertextShader from "./shaders/vertex.glsl";
-import * as THREE from "three";
-import { extend, useFrame } from "@react-three/fiber";
-import { useRef } from "react";
 
-const PointsMaterial = shaderMaterial(
+const ParticlesMaterial = shaderMaterial(
   {
     uResolution: new THREE.Vector2(),
   },
@@ -13,22 +13,20 @@ const PointsMaterial = shaderMaterial(
   fragmentShader,
 );
 
-type PointsMaterialType = THREE.ShaderMaterial & {
+type ParticlesMaterialType = THREE.ShaderMaterial & {
   uResolution: THREE.Vector2;
 };
 
-extend({ PointsMaterial });
+const PartMaterial = extend(ParticlesMaterial);
 
 const Experience = () => {
-  const pointsMaterialRef = useRef<PointsMaterialType>(null);
+  const particlesMaterialRef = useRef<ParticlesMaterialType>(null!);
 
   useFrame((state) => {
-    if (pointsMaterialRef.current) {
-      pointsMaterialRef.current.uResolution = new THREE.Vector2(
-        state.size.width * state.viewport.dpr,
-        state.size.height * state.viewport.dpr,
-      );
-    }
+    particlesMaterialRef.current.uResolution = new THREE.Vector2(
+      state.size.width * state.viewport.dpr,
+      state.size.height * state.viewport.dpr,
+    );
   });
 
   return (
@@ -39,9 +37,9 @@ const Experience = () => {
 
       <points>
         <planeGeometry args={[10, 10, 32, 32]} />
-        <pointsMaterial
+        <PartMaterial
           key={vertextShader + fragmentShader}
-          ref={pointsMaterialRef}
+          ref={particlesMaterialRef}
         />
       </points>
     </>
