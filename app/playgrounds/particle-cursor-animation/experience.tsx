@@ -6,6 +6,7 @@ import fragmentShader from "./shaders/fragment.glsl";
 import vertextShader from "./shaders/vertex.glsl";
 import glowImage from "@/public/particle-cursor-animation/glow.png";
 
+// Shader Material - Particles
 const ParticlesMaterial = shaderMaterial(
   {
     uResolution: new THREE.Vector2(),
@@ -22,39 +23,41 @@ type ParticlesMaterialType = THREE.ShaderMaterial & {
 
 const PartMaterial = extend(ParticlesMaterial);
 
+// Experience Component
 type Props = {
   canvasRef: React.RefObject<HTMLCanvasElement>;
 };
 
 const Experience = ({ canvasRef }: Props) => {
-  const particlesMaterialRef = useRef<ParticlesMaterialType>(null!);
   const texture = useTexture("/particle-cursor-animation/picture-1.png");
+  const particlesMaterialRef = useRef<ParticlesMaterialType>(null!);
   const interactivePlaneRef = useRef<THREE.Mesh>(null!);
   const canvasContextRef = useRef<CanvasRenderingContext2D | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const raycasterRef = useRef(new THREE.Raycaster());
 
   useEffect(() => {
-    // Initialize canvas
+    // 2D Canvas - Initialize canvas
     const canvas = canvasRef.current;
     const context = canvas.getContext("2d")!;
     context.fillRect(0, 0, canvas.width, canvas.height);
     canvasContextRef.current = context;
 
-    // Initialize image
+    // 2D Canvas - Initialize Glow Image
     const image = new Image();
     image.src = glowImage.src;
     image.onload = () => {
       imageRef.current = image;
     };
 
-    // Set texture once
+    // Particles - Set texture once
     if (particlesMaterialRef.current) {
       particlesMaterialRef.current.uPictureTexture = texture;
     }
   }, [canvasRef, texture]);
 
   useFrame((state) => {
+    // Particles - Update resolution every frame, in case of window resize
     particlesMaterialRef.current.uResolution = new THREE.Vector2(
       state.size.width * state.viewport.dpr,
       state.size.height * state.viewport.dpr,
@@ -63,18 +66,20 @@ const Experience = ({ canvasRef }: Props) => {
     // Raycaster update
     const raycaster = raycasterRef.current;
     raycaster.setFromCamera(state.pointer, state.camera);
+    // Interactive Plane - Check intersections
     const intersections = raycaster.intersectObject(
       interactivePlaneRef.current,
     );
+    // If intersecting, draw glow on 2D canvas
     if (intersections.length && imageRef.current && canvasContextRef.current) {
       const uv = intersections[0].uv;
 
       if (uv) {
+        // 2D Canvas - Draw glow on canvas
         const x = uv.x * canvasRef.current.width;
         const y = (1 - uv.y) * canvasRef.current.height;
         const glowSize = canvasRef.current.width * 0.25;
 
-        // Draw on canvas
         canvasContextRef.current.globalCompositeOperation = "lighten";
         canvasContextRef.current.drawImage(
           imageRef.current,
@@ -93,6 +98,7 @@ const Experience = ({ canvasRef }: Props) => {
 
       <OrbitControls />
 
+      {/* Particles Plane */}
       <points>
         <planeGeometry args={[10, 10, 128, 128]} />
         <PartMaterial
@@ -101,7 +107,7 @@ const Experience = ({ canvasRef }: Props) => {
         />
       </points>
 
-      {/* Interactive Plane */}
+      {/* Interactive Plane, to detect cursor intersections, then draw glow on 2D canvas */}
       <mesh ref={interactivePlaneRef}>
         <planeGeometry args={[10, 10]} />
         <meshBasicMaterial color="red" />
