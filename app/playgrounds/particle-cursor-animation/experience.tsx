@@ -31,35 +31,45 @@ const Experience = ({ canvasRef }: Props) => {
   const texture = useTexture("/particle-cursor-animation/picture-1.png");
   const interactivePlaneRef = useRef<THREE.Mesh>(null!);
   const canvasContextRef = useRef<CanvasRenderingContext2D | null>(null);
-
-  const image = new Image();
-  image.src = glowImage.src;
+  const imageRef = useRef<HTMLImageElement | null>(null);
+  const raycasterRef = useRef(new THREE.Raycaster());
 
   useEffect(() => {
+    // Initialize canvas
     const canvas = canvasRef.current;
     const context = canvas.getContext("2d")!;
     context.fillRect(0, 0, canvas.width, canvas.height);
     canvasContextRef.current = context;
-  }, [canvasRef]);
 
-  const raycaster = new THREE.Raycaster();
+    // Initialize image
+    const image = new Image();
+    image.src = glowImage.src;
+    image.onload = () => {
+      imageRef.current = image;
+    };
+
+    // Set texture once
+    if (particlesMaterialRef.current) {
+      particlesMaterialRef.current.uPictureTexture = texture;
+    }
+  }, [canvasRef, texture]);
 
   useFrame((state) => {
     particlesMaterialRef.current.uResolution = new THREE.Vector2(
       state.size.width * state.viewport.dpr,
       state.size.height * state.viewport.dpr,
     );
-    particlesMaterialRef.current.uPictureTexture = texture;
 
     // Raycaster update
+    const raycaster = raycasterRef.current;
     raycaster.setFromCamera(state.pointer, state.camera);
     const intersections = raycaster.intersectObject(
       interactivePlaneRef.current,
     );
-    if (intersections.length) {
+    if (intersections.length && imageRef.current && canvasContextRef.current) {
       const uv = intersections[0].uv;
 
-      if (uv && canvasContextRef.current) {
+      if (uv) {
         const x = uv.x * canvasRef.current.width;
         const y = (1 - uv.y) * canvasRef.current.height;
         const glowSize = canvasRef.current.width * 0.25;
@@ -67,7 +77,7 @@ const Experience = ({ canvasRef }: Props) => {
         // Draw on canvas
         canvasContextRef.current.globalCompositeOperation = "lighten";
         canvasContextRef.current.drawImage(
-          image,
+          imageRef.current,
           x - glowSize / 2,
           y - glowSize / 2,
           glowSize,
