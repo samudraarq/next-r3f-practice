@@ -75,12 +75,23 @@ const Experience = ({ canvasRef }: Props) => {
       const uv = intersections[0].uv;
 
       if (uv) {
+        // 2D Canvas - Fade out effect
+        canvasContextRef.current.globalCompositeOperation = "source-over";
+        canvasContextRef.current.globalAlpha = 0.02;
+        canvasContextRef.current.fillRect(
+          0,
+          0,
+          canvasRef.current.width,
+          canvasRef.current.height,
+        );
+
         // 2D Canvas - Draw glow on canvas
         const x = uv.x * canvasRef.current.width;
         const y = (1 - uv.y) * canvasRef.current.height;
         const glowSize = canvasRef.current.width * 0.25;
 
         canvasContextRef.current.globalCompositeOperation = "lighten";
+        canvasContextRef.current.globalAlpha = 1;
         canvasContextRef.current.drawImage(
           imageRef.current,
           x - glowSize / 2,
@@ -108,7 +119,7 @@ const Experience = ({ canvasRef }: Props) => {
       </points>
 
       {/* Interactive Plane, to detect cursor intersections, then draw glow on 2D canvas */}
-      <mesh ref={interactivePlaneRef}>
+      <mesh ref={interactivePlaneRef} visible={false}>
         <planeGeometry args={[10, 10]} />
         <meshBasicMaterial color="red" />
       </mesh>
