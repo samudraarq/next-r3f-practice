@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { extend, useFrame } from "@react-three/fiber";
 import { OrbitControls, shaderMaterial, useTexture } from "@react-three/drei";
 import * as THREE from "three";
