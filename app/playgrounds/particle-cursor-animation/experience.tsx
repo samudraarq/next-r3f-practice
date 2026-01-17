@@ -103,6 +103,7 @@ const Experience = ({ canvasRef }: Props) => {
     // Raycaster update
     const raycaster = raycasterRef.current;
     raycaster.setFromCamera(state.pointer, state.camera);
+
     // Interactive Plane - Check intersections
     const intersections = raycaster.intersectObject(
       interactivePlaneRef.current,
@@ -112,16 +113,6 @@ const Experience = ({ canvasRef }: Props) => {
       const uv = intersections[0].uv;
 
       if (uv) {
-        // 2D Canvas - Fade out effect
-        canvasContextRef.current.globalCompositeOperation = "source-over";
-        canvasContextRef.current.globalAlpha = 0.02;
-        canvasContextRef.current.fillRect(
-          0,
-          0,
-          canvasRef.current.width,
-          canvasRef.current.height,
-        );
-
         // 2D Canvas - Draw glow on canvas
         const x = uv.x * canvasRef.current.width;
         const y = (1 - uv.y) * canvasRef.current.height;
@@ -136,12 +127,24 @@ const Experience = ({ canvasRef }: Props) => {
           glowSize,
           glowSize,
         );
-
-        // Update Canvas Texture
-        if (canvasTextureRef.current) {
-          canvasTextureRef.current.needsUpdate = true;
-        }
       }
+    }
+
+    if (canvasContextRef.current) {
+      // 2D Canvas - Fade out effect
+      canvasContextRef.current.globalCompositeOperation = "source-over";
+      canvasContextRef.current.globalAlpha = 0.02;
+      canvasContextRef.current.fillRect(
+        0,
+        0,
+        canvasRef.current.width,
+        canvasRef.current.height,
+      );
+    }
+
+    // Update Canvas Texture
+    if (canvasTextureRef.current) {
+      canvasTextureRef.current.needsUpdate = true;
     }
   });
 
