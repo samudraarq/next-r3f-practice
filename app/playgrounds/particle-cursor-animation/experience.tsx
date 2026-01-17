@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { extend, useFrame } from "@react-three/fiber";
 import { OrbitControls, shaderMaterial, useTexture } from "@react-three/drei";
 import * as THREE from "three";
@@ -39,6 +39,7 @@ const Experience = ({ canvasRef }: Props) => {
   const imageRef = useRef<HTMLImageElement | null>(null);
   const raycasterRef = useRef(new THREE.Raycaster());
   const canvasTextureRef = useRef<THREE.CanvasTexture | null>(null);
+  const canvasCursorPrevious = useRef(new THREE.Vector2(9999, 9999));
 
   useEffect(() => {
     // 2D Canvas - Initialize canvas
@@ -86,6 +87,10 @@ const Experience = ({ canvasRef }: Props) => {
       new THREE.BufferAttribute(anglesArray, 1),
     );
 
+    // Particles - Optimization
+    particlesGeometryRef.current.setIndex(null);
+    particlesGeometryRef.current.deleteAttribute("normal");
+
     return () => {
       // Cleanup
       canvasTexture.dispose();
@@ -113,13 +118,20 @@ const Experience = ({ canvasRef }: Props) => {
       const uv = intersections[0].uv;
 
       if (uv) {
+        // Speed Alpha
+        const cursorDistance = canvasCursorPrevious.current.distanceTo(
+          new THREE.Vector2(uv.x, uv.y),
+        );
+        canvasCursorPrevious.current.copy(new THREE.Vector2(uv.x, uv.y));
+        const alpha = Math.min(cursorDistance * 20, 1);
+
         // 2D Canvas - Draw glow on canvas
         const x = uv.x * canvasRef.current.width;
         const y = (1 - uv.y) * canvasRef.current.height;
         const glowSize = canvasRef.current.width * 0.25;
 
         canvasContextRef.current.globalCompositeOperation = "lighten";
-        canvasContextRef.current.globalAlpha = 1;
+        canvasContextRef.current.globalAlpha = alpha;
         canvasContextRef.current.drawImage(
           imageRef.current,
           x - glowSize / 2,
@@ -166,7 +178,7 @@ const Experience = ({ canvasRef }: Props) => {
       {/* Interactive Plane, to detect cursor intersections, then draw glow on 2D canvas */}
       <mesh ref={interactivePlaneRef} visible={false}>
         <planeGeometry args={[10, 10]} />
-        <meshBasicMaterial color="red" />
+        <meshBasicMaterial color="red" side={THREE.DoubleSide} />
       </mesh>
     </>
   );
