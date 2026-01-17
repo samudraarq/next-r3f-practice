@@ -11,6 +11,7 @@ const ParticlesMaterial = shaderMaterial(
   {
     uResolution: new THREE.Vector2(),
     uPictureTexture: null,
+    uDisplacementTexture: null,
   },
   vertextShader,
   fragmentShader,
@@ -19,6 +20,7 @@ const ParticlesMaterial = shaderMaterial(
 type ParticlesMaterialType = THREE.ShaderMaterial & {
   uResolution: THREE.Vector2;
   uPictureTexture: THREE.Texture | null;
+  uDisplacementTexture: THREE.Texture | null;
 };
 
 const PartMaterial = extend(ParticlesMaterial);
@@ -30,11 +32,13 @@ type Props = {
 
 const Experience = ({ canvasRef }: Props) => {
   const texture = useTexture("/particle-cursor-animation/picture-1.png");
+  const particlesGeometryRef = useRef<THREE.BufferGeometry>(null!);
   const particlesMaterialRef = useRef<ParticlesMaterialType>(null!);
   const interactivePlaneRef = useRef<THREE.Mesh>(null!);
   const canvasContextRef = useRef<CanvasRenderingContext2D | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const raycasterRef = useRef(new THREE.Raycaster());
+  const canvasTextureRef = useRef<THREE.CanvasTexture | null>(null);
 
   useEffect(() => {
     // 2D Canvas - Initialize canvas
@@ -50,10 +54,43 @@ const Experience = ({ canvasRef }: Props) => {
       imageRef.current = image;
     };
 
+    // Canvas Texture
+    const canvasTexture = new THREE.CanvasTexture(canvas);
+    canvasTextureRef.current = canvasTexture;
+
     // Particles - Set texture once
     if (particlesMaterialRef.current) {
       particlesMaterialRef.current.uPictureTexture = texture;
+      particlesMaterialRef.current.uDisplacementTexture = canvasTexture;
     }
+
+    // Particles - Intensity adjustment
+    const intensitiesArray = new Float32Array(
+      particlesGeometryRef.current.attributes.position.count,
+    );
+    const anglesArray = new Float32Array(
+      particlesGeometryRef.current.attributes.position.count,
+    );
+
+    for (let i = 0; i < intensitiesArray.length; i++) {
+      intensitiesArray[i] = Math.random();
+      anglesArray[i] = Math.random() * Math.PI * 2;
+    }
+
+    particlesGeometryRef.current.setAttribute(
+      "aIntensity",
+      new THREE.BufferAttribute(intensitiesArray, 1),
+    );
+    particlesGeometryRef.current.setAttribute(
+      "aAngle",
+      new THREE.BufferAttribute(anglesArray, 1),
+    );
+
+    return () => {
+      // Cleanup
+      canvasTexture.dispose();
+      texture.dispose();
+    };
   }, [canvasRef, texture]);
 
   useFrame((state) => {
@@ -99,6 +136,11 @@ const Experience = ({ canvasRef }: Props) => {
           glowSize,
           glowSize,
         );
+
+        // Update Canvas Texture
+        if (canvasTextureRef.current) {
+          canvasTextureRef.current.needsUpdate = true;
+        }
       }
     }
   });
@@ -111,7 +153,7 @@ const Experience = ({ canvasRef }: Props) => {
 
       {/* Particles Plane */}
       <points>
-        <planeGeometry args={[10, 10, 128, 128]} />
+        <planeGeometry args={[10, 10, 128, 128]} ref={particlesGeometryRef} />
         <PartMaterial
           key={vertextShader + fragmentShader}
           ref={particlesMaterialRef}
