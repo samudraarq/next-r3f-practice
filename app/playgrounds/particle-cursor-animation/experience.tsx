@@ -40,6 +40,8 @@ const Experience = ({ canvasRef }: Props) => {
   const raycasterRef = useRef(new THREE.Raycaster());
   const canvasTextureRef = useRef<THREE.CanvasTexture | null>(null);
   const canvasCursorPrevious = useRef(new THREE.Vector2(9999, 9999));
+  const canvasCursorCurrent = useRef(new THREE.Vector2(9999, 9999));
+  const resolutionRef = useRef(new THREE.Vector2());
 
   useEffect(() => {
     // 2D Canvas - Initialize canvas
@@ -100,10 +102,11 @@ const Experience = ({ canvasRef }: Props) => {
 
   useFrame((state) => {
     // Particles - Update resolution every frame, in case of window resize
-    particlesMaterialRef.current.uResolution = new THREE.Vector2(
+    resolutionRef.current.set(
       state.size.width * state.viewport.dpr,
       state.size.height * state.viewport.dpr,
     );
+    particlesMaterialRef.current.uResolution = resolutionRef.current;
 
     // Raycaster update
     const raycaster = raycasterRef.current;
@@ -119,10 +122,11 @@ const Experience = ({ canvasRef }: Props) => {
 
       if (uv) {
         // Speed Alpha
+        canvasCursorCurrent.current.set(uv.x, uv.y);
         const cursorDistance = canvasCursorPrevious.current.distanceTo(
-          new THREE.Vector2(uv.x, uv.y),
+          canvasCursorCurrent.current,
         );
-        canvasCursorPrevious.current.copy(new THREE.Vector2(uv.x, uv.y));
+        canvasCursorPrevious.current.copy(canvasCursorCurrent.current);
         const alpha = Math.min(cursorDistance * 20, 1);
 
         // 2D Canvas - Draw glow on canvas
